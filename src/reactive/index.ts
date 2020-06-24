@@ -25,7 +25,6 @@ const useReactiveProps = <P>(props: P) => {
 
 		for (const key in props) {
 			if (prev[key] !== props[key]) {
-				console.log(reactiveProps[key], props[key]);
 				reactiveProps[key] = props[key];
 			}
 		}
