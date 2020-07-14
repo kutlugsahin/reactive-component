@@ -1,4 +1,4 @@
-import { action, computed, isObservable, observable } from 'mobx';
+import { action, computed, isObservable, observable, Lambda, IValueDidChange } from 'mobx';
 import { FunctionComponent, useEffect, useMemo, useRef, useState } from 'react';
 
 export type ReactiveComponent<P = {}> = (props: P) => () => JSX.Element;
@@ -44,7 +44,7 @@ const useForceUpdate = () => {
 
 // vue3 composition-api inspired implementation for react powered by mobx
 export function createComponent<P = {}>(reactiveComponent: ReactiveComponent<P>): FunctionComponent<P> {
-	
+
 	// creating a functional component
 	return (props: P) => {
 		const reactiveProps = useReactiveProps(props);
@@ -69,19 +69,17 @@ export function createComponent<P = {}>(reactiveComponent: ReactiveComponent<P>)
 			currentHooksHandle = null;
 
 			// calling the render function within 'mobx computed' to cache the render and listen to the accessed reactive values.
- 			const computedRender = computed(() => renderer());
+			const computedRender = computed(() => renderer());
 
 			// now we observe the computed value and when it's invalidated we will re-render
-			const dispose = computedRender.observe(action(() => {
-				forceUpdate();
-			}))
+			const dispose = computedRender.observe(action(() => forceUpdate()));
 
 			return {
 				computedRender,
 				hooks,
 				dispose,
 			};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
+			// eslint-disable-next-line react-hooks/exhaustive-deps
 		}, []);
 
 		// call onUpdated
@@ -114,4 +112,54 @@ export function onUnmounted(callback: () => void) {
 
 export function onUpdated(callback: () => void) {
 	currentHooksHandle!.onUpdated = callback;
+}
+
+type Reactive<T> = T extends object ? T : { value: T }
+
+function createBox<T>(val: T): { value: T } {
+	const observed = observable.box<T>(val);
+	return {
+		get value() {
+			return observed.get();
+		},
+		set value(v: T) {
+			observed.set(v);
+		}
+	}
+}
+
+export const reactive = <T>(val: T): Reactive<T> => {
+	const type = typeof val;
+
+	switch (type) {
+		case 'object':
+			return observable.object(val) as Reactive<T>;
+		case 'bigint':
+		case 'number':
+		case 'string':
+		case 'boolean': {
+			return createBox(val) as Reactive<T>
+		}
+		default:
+			return observable(val) as Reactive<T>;
+	}
+}
+
+export type Calculated<T extends () => any> = {
+	value: ReturnType<T>,
+	observe: (listener: (change: IValueDidChange<T>) => void, fireImmediately?: boolean) => Lambda;
+}
+
+export const calculated = <R>(fn: () => R) => {
+	const cmp = computed(fn);
+
+	return {
+		get value() {
+			return cmp.get();
+		},
+		set value(val: R) {
+			cmp.set(val);
+		},
+		observe: cmp.observe
+	}
 }

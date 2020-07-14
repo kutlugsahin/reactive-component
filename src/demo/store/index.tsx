@@ -1,4 +1,4 @@
-import { observable, computed, reaction, decorate, action } from "mobx";
+import { action, computed, decorate, observable, reaction } from "mobx";
 
 export interface TodoItem {
 	text: string;
@@ -15,6 +15,7 @@ class TodoStore {
 
 	get leftTodosCount() {
 		return this._todos.filter(p => !p.isCompleted).length;
+
 	}
 
 	get todos() {
@@ -61,7 +62,7 @@ class TodoStore {
 
 	public populateStore() {
 		const todos = JSON.parse(localStorage.getItem('todos') || '[]') as TodoItem[];
-		const filter = JSON.parse(localStorage.getItem('filter') || 'all') as Filter;
+		const filter = JSON.parse(localStorage.getItem('filter') || '"all"') as Filter;
 
 		this._todos = todos;
 		this._filter = filter;

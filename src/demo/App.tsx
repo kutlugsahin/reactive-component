@@ -5,6 +5,7 @@ import { Header } from './components/Header';
 import { List } from './components/List';
 import { Footer } from './components/Footer';
 import { store } from './store';
+import { Loader, Content } from './components/loader';
 
 export const App = createComponent(() => {
 	onMounted(() => {
@@ -21,3 +22,11 @@ export const App = createComponent(() => {
 		</section>
 	)
 })
+
+// export const App = createComponent(() => {
+// 	return () => (
+// 		<Loader>
+// 			<Content/>
+// 		</Loader>
+// 	)
+// })
