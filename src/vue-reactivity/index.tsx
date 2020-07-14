@@ -1,5 +1,5 @@
-import { createComponent ,reactive, calculated } from "../reactive";
 import React from 'react';
+import { calculated, createComponent, reactive, watch } from "../reactive";
 
 interface User { name: string; id: number };
 
@@ -17,10 +17,24 @@ const userCount = calculated(() => {
 const User = createComponent(() => {
 	const clicks = reactive(0);
 
+	const chars = reactive([] as number[]);
+
+	watch(() => clicks.value, (newVal, oldVal) => {
+		console.log(newVal, oldVal);
+	})
+
 	return () => {
 		console.log('user renders');
 		return (
-			<div onClick={() => clicks.value++}>USer clicks{clicks.value}</div>
+			<div>
+				<div onClick={(e) => {
+					// clicks.value++;
+					chars.push(clicks.value);
+				}}>USer clicks{clicks.value}</div>
+				<div>
+					{chars.map(ch => <div>{ch}</div>)}
+				</div>
+			</div>
 		)
 	}
 })
@@ -41,7 +55,7 @@ export const App = createComponent(() => {
 
 		return (
 			<div>
-				<User/>
+				<User />
 				<div>
 					<input type="text" value={username.value} onChange={e => username.value = e.target.value} />
 					<button onClick={() => {

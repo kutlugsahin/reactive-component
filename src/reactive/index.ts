@@ -71,15 +71,15 @@ export function createComponent<P = {}>(reactiveComponent: ReactiveComponent<P>)
 			// calling the render function within 'mobx computed' to cache the render and listen to the accessed reactive values.
 			const computedRender = computed(() => renderer());
 
-			const scheduler = {
-				isRunning: false,
-				run(job: ReactiveEffect<any>) {
-					if (!this.isRunning) {
-						this.isRunning = true;
+			const scheduler = () => {
+				let isRunning = false;
+				return (job: ReactiveEffect<any>) => {
+					if (!isRunning) {
+						isRunning = true;
 
 						Promise.resolve().then(() => {
 							job();
-							this.isRunning = false;
+							isRunning = false;
 						})
 					}
 				}
@@ -90,7 +90,7 @@ export function createComponent<P = {}>(reactiveComponent: ReactiveComponent<P>)
 				return computedRender.value;
 			}, {
 				computed: true,
-				scheduler: scheduler.run,
+				scheduler: scheduler(),
 			});
 
 			function dispose() {
@@ -181,6 +181,26 @@ export const calculated = <R>(fn: () => R) => {
 		get value() {
 			return cmp.value;
 		},
-		// observe: cmp.observe
+		// observe: watch
+	}
+}
+
+export const watch = <T extends () => any, R extends (newValue: ReturnType<T>, oldValue: ReturnType<T>) => void>(fn: T, clb: R) => {
+	const computedVal = computed(fn);
+	let oldValue: ReturnType<T>;
+	let newValue: ReturnType<T>;
+
+	const eff = effect(() => {
+		oldValue = newValue;
+		newValue = computedVal.value;
+		clb(newValue, oldValue);
+	}, {
+		lazy: false,
+		computed: true,
+	})
+
+	return () => {
+		stop(eff);
+		stop(computedVal.effect);
 	}
 }
