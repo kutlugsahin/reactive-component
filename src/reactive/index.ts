@@ -1,4 +1,4 @@
-import { action, computed, isObservable, observable, Lambda, IValueDidChange } from 'mobx';
+import { computed, isReactive, reactive as vueReactive, ref, UnwrapRef, effect, stop, ReactiveEffect, track, trigger, TriggerOpTypes, } from '@vue/reactivity';
 import { FunctionComponent, useEffect, useMemo, useRef, useState } from 'react';
 
 export type ReactiveComponent<P = {}> = (props: P) => () => JSX.Element;
@@ -11,10 +11,10 @@ interface Hooks {
 
 let currentHooksHandle: Hooks | null = null;
 
-const useReactiveProps = <P>(props: P) => {
+const useReactiveProps = <P extends { [key: string]: any }>(props: P): P => {
 	// convert props to a reactive object
 	// eslint-disable-next-line react-hooks/exhaustive-deps
-	const reactiveProps = useMemo(() => isObservable(props) ? props : observable(props), []);
+	const reactiveProps = useMemo(() => isReactive(props) ? props : vueReactive(props), []) as P;
 
 	// keep the old props object for future comparison
 	const prevProps = useRef<P>(props);
@@ -71,8 +71,32 @@ export function createComponent<P = {}>(reactiveComponent: ReactiveComponent<P>)
 			// calling the render function within 'mobx computed' to cache the render and listen to the accessed reactive values.
 			const computedRender = computed(() => renderer());
 
-			// now we observe the computed value and when it's invalidated we will re-render
-			const dispose = computedRender.observe(action(() => forceUpdate()));
+			const scheduler = {
+				isRunning: false,
+				run(job: ReactiveEffect<any>) {
+					if (!this.isRunning) {
+						this.isRunning = true;
+
+						Promise.resolve().then(() => {
+							job();
+							this.isRunning = false;
+						})
+					}
+				}
+			}
+
+			const renderEffect = effect(() => {
+				forceUpdate();
+				return computedRender.value;
+			}, {
+				computed: true,
+				scheduler: scheduler.run,
+			});
+
+			function dispose() {
+				stop(renderEffect);
+				stop(computedRender.effect);
+			}
 
 			return {
 				computedRender,
@@ -98,7 +122,7 @@ export function createComponent<P = {}>(reactiveComponent: ReactiveComponent<P>)
 		}, [dispose, hooks]);
 
 		// return the cached render
-		return computedRender.get();
+		return computedRender.value;
 	};
 }
 
@@ -117,13 +141,13 @@ export function onUpdated(callback: () => void) {
 type Reactive<T> = T extends object ? T : { value: T }
 
 function createBox<T>(val: T): { value: T } {
-	const observed = observable.box<T>(val);
+	const observed = ref<T>(val);
 	return {
 		get value() {
-			return observed.get();
+			return observed.value as T
 		},
 		set value(v: T) {
-			observed.set(v);
+			observed.value = v as UnwrapRef<T>;
 		}
 	}
 }
@@ -133,7 +157,7 @@ export const reactive = <T>(val: T): Reactive<T> => {
 
 	switch (type) {
 		case 'object':
-			return observable.object(val) as Reactive<T>;
+			return vueReactive(val as any) as Reactive<T>;
 		case 'bigint':
 		case 'number':
 		case 'string':
@@ -141,13 +165,13 @@ export const reactive = <T>(val: T): Reactive<T> => {
 			return createBox(val) as Reactive<T>
 		}
 		default:
-			return observable(val) as Reactive<T>;
+			return vueReactive(val as any) as Reactive<T>;
 	}
 }
 
 export type Calculated<T extends () => any> = {
 	value: ReturnType<T>,
-	observe: (listener: (change: IValueDidChange<T>) => void, fireImmediately?: boolean) => Lambda;
+	// observe: (listener: (change: IValueDidChange<T>) => void, fireImmediately?: boolean) => Lambda;
 }
 
 export const calculated = <R>(fn: () => R) => {
@@ -155,11 +179,8 @@ export const calculated = <R>(fn: () => R) => {
 
 	return {
 		get value() {
-			return cmp.get();
+			return cmp.value;
 		},
-		set value(val: R) {
-			cmp.set(val);
-		},
-		observe: cmp.observe
+		// observe: cmp.observe
 	}
 }
