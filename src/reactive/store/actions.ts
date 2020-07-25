@@ -21,18 +21,18 @@ export const selector = <T extends Selector>(fn: T): Calculated<ReturnType<T>> =
 }
 
 
-export type SelectorWithParams = (...args: any) => any;
+// export type SelectorWithParams = (...args: any) => any;
 
-export const selectorFactory = <T extends SelectorWithParams>(selector: T): FunctionWithoutState<T> => {
+// export const selectorFactory = <T extends SelectorWithParams>(selector: T): FunctionWithoutState<T> => {
 
-	let computedValue;
+// 	// let computedValue;
 
-	return (...p: OmitStateParameter<T>) => {
-		if (!computedValue) {
-			computedValue = computed(() => {
-				return 
-			})
-		}
-	}
-}
+// 	// return (...p: OmitStateParameter<T>) => {
+// 	// 	if (!computedValue) {
+// 	// 		computedValue = computed(() => {
+// 	// 			return 
+// 	// 		})
+// 	// 	}
+// 	// }
+// }
 
