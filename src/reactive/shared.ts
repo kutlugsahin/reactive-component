@@ -11,7 +11,7 @@ export 	const disposeEffectOnUnmount = (effect: ReactiveEffect) => {
 	}
 }
 
-export const ref = <T>(val: T): { value: T } => {
+const ref = <T>(val: T): { value: T } => {
 	const observed = vendorRef<T>(val);
 	return {
 		get value() {
@@ -33,7 +33,7 @@ export const reactive = <T>(val: T): Reactive<T> => {
 		case 'number':
 		case 'string':
 		case 'boolean': {
-			return vendorRef(val) as Reactive<T>
+			return ref(val) as Reactive<T>
 		}
 		default:
 			return vendorReactive(val as any) as Reactive<T>;
@@ -103,6 +103,8 @@ export interface WatchOptions {
 	scheduler?: (job: ReactiveEffect<any>) => void;
 }
 
+
+
 export const watch = <T extends () => any, R extends (newValue: ReturnType<T>, oldValue: ReturnType<T>) => void>(fn: T, clb: R, options?: WatchOptions) => {
 	const computedVal = vendorComputed(fn);
 	let oldValue: ReturnType<T>;
@@ -116,9 +118,9 @@ export const watch = <T extends () => any, R extends (newValue: ReturnType<T>, o
 		lazy: false,
 		computed: true,
 		scheduler: options?.scheduler,
-	})
+	})	
 
-	const dispose = () => {
+	function dispose() {
 		stop(eff);
 		stop(computedVal.effect);
 	}

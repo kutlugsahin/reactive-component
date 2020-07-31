@@ -11,28 +11,59 @@ export const action = <T extends (s: any, ...p: any[]) => any>(fn: T): FunctionW
 	}
 }
 
-export type Action = (s: any, ...params: any[]) => any;
-export type ActionMap = { [key: string]: Action }
+export type Dictionary<T> = { [key: string]: T };
+
+export type Action<S = any> = (s: S, ...params: any[]) => void;
+export type ActionMap<S = any> = { [key: string]: Action<S> }
 export type ActionMapWithoutState<T extends ActionMap> = { [key in keyof T]: FunctionWithoutState<T[key]> }
 
-export type Selector = (s: any) => any;
+export type Selector<S = any> = (s: S) => any;
 export const selector = <T extends Selector>(fn: T): Calculated<ReturnType<T>> => {
 	return computed(() => fn(getGlobalStore()));
 }
 
+type SelectorMap<T extends { [key: string]: Selector }> = {
+	[key in keyof T]: ReturnType<T[key]>
+}
 
-// export type SelectorWithParams = (...args: any) => any;
+type ComputedSelectorMap<S, T extends Selectors<S>> = {
+	[key in keyof T]: ReturnType<T[key]>
+}
 
-// export const selectorFactory = <T extends SelectorWithParams>(selector: T): FunctionWithoutState<T> => {
 
-// 	// let computedValue;
+type Selectors<S> = { [key: string]: Selector<S> };
 
-// 	// return (...p: OmitStateParameter<T>) => {
-// 	// 	if (!computedValue) {
-// 	// 		computedValue = computed(() => {
-// 	// 			return 
-// 	// 		})
-// 	// 	}
-// 	// }
-// }
+type Actions<T extends Dictionary<Action>> = {[key in keyof T]: FunctionWithoutState<T[key]>}
+
+export const createSelectors = <S, T extends Selectors<S>>(selectors: T): ComputedSelectorMap<S, T> => {
+
+	const result = {};
+
+	for (const key in selectors) {
+		if (Object.prototype.hasOwnProperty.call(selectors, key)) {
+			const selectorResult = selector(selectors[key]);
+
+			Object.defineProperty(result, key, {
+				get() {
+					return selectorResult.value;
+				},
+			});
+		}
+	}
+
+	return result as ComputedSelectorMap<S, T>;
+}
+
+export const createActions = <S, T extends Dictionary<Action<S>>>(actions: T): Actions<T> => {
+
+	const result: any = {};
+
+	for (const key in actions) {
+		if (Object.prototype.hasOwnProperty.call(actions, key)) {
+			result[key] = action(actions[key]);
+		}
+	}
+
+	return result as Actions<T>;
+}
 

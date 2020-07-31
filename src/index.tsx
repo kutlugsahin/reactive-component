@@ -6,7 +6,8 @@ import { List } from './vue-reactivity';
 ReactDOM.render(
   // <React.StrictMode>
   // <VueApp />
-  <List/>
+  // <List/>
+  <App/>
   // </React.StrictMode>
   ,document.getElementById('root')
 );

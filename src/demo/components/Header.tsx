@@ -1,6 +1,6 @@
 import React from 'react';
 import { computed, createComponent, reactive } from '../../reactive';
-import { store } from '../store';
+import { actions } from '../store';
 
 export const Header = createComponent(() => {
 	const todoText = reactive('');
@@ -10,7 +10,7 @@ export const Header = createComponent(() => {
 	})
 
 	function createTodoItem() {
-		store.createTodo(todoText.value);
+		actions.createTodo(todoText.value);
 		todoText.value = '';
 	}
 

@@ -27,7 +27,7 @@ export const List = createComponent(() => {
 		console.log('list render');
 		return (
 			<div>
-				{state.items.map(item => <ListItem key={item.id} item={item} onClick={onItemClick}/>)}
+				{state.items.map(item => <ListItem key={item.id} item={item} onClick={onItemClick} />)}
 			</div>
 		);
 	}
@@ -41,7 +41,7 @@ const ListItem = createComponent((props: { item: Item, onClick: any }) => {
 	return () => {
 		console.log('list item render');
 		return (
-			<div className={props.item.selected? 'selected' : ''} onClick={() => props.onClick(props.item.id)}>{props.item.name}</div>
+			<div className={props.item.selected ? 'selected' : ''} onClick={() => props.onClick(props.item.id)}>{props.item.name}</div>
 		)
 	}
 })

@@ -1,6 +1,6 @@
 import React from 'react';
 import { createComponent } from '../../reactive';
-import { store, TodoItem } from '../store';
+import { actions, TodoItem } from '../store';
 
 interface ListItemProps {
 	todo: TodoItem;
@@ -17,7 +17,7 @@ export const ListItem = createComponent(({ todo }: ListItemProps) => {
 	}
 
 	function removeTodoItem() {
-		store.removeTodo(todo);
+		actions.removeTodo(todo);
 	}
 
 	function onCheckChanged(checked: boolean) {

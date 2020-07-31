@@ -4,12 +4,12 @@ import './styles.css';
 import { Header } from './components/Header';
 import { List } from './components/List';
 import { Footer } from './components/Footer';
-import { store } from './store';
+import { actions } from './store';
 import { Loader, Content } from './components/loader';
 
 export const App = createComponent(() => {
 	onMounted(() => {
-		store.populateStore();
+		actions.populateStore();
 	})
 
 	return () => (
